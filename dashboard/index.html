@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenIQ - Dashboard</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="app-container">
+    <aside class="sidebar" id="sidebar">
+        <div class="brand-box">
+            <div class="brand-logo"><i class="fas fa-leaf"></i></div>
+            <div class="brand-text">
+                <h2>GreenIQ</h2>
+                <span style="font-size:11px; color:#6b7280;">Smart Farming AI</span>
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <a href="index.html" class="nav-link active">
+                <i class="fas fa-chart-pie"></i> <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-link btn-rekomendasi">
+                <i class="fas fa-seedling"></i> <span>Rekomendasi</span>
+            </a>
+            <a href="riwayat.html" class="nav-link">
+                <i class="fas fa-clipboard-list"></i> <span>Riwayat</span>
+            </a>
+            <a href="peta_kelembaban.html" class="nav-link">
+                <i class="fas fa-map-marked-alt"></i> <span>Peta Tanah</span>
+            </a>
+            <div style="margin:20px 0 10px 10px; font-size:11px; font-weight:700; color:#9ca3af;">SYSTEM</div>
+            <a href="#" class="nav-link">
+                <i class="fas fa-cog"></i> <span>Pengaturan</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display:flex; align-items:center; gap:15px;">
+                <button class="menu-toggle" onclick="toggleSidebar()" style="background:none; border:none; font-size:20px; display:none;">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div>
+                    <h1 id="header-title" style="margin:0; font-size:20px;">Dashboard</h1>
+                    <p style="margin:0; font-size:12px; color:#6b7280;">Real-time overview & AI insights</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-body">
+
+            <section id="view-dashboard" class="view-section active">
+                <div class="stats-grid">
+                    <div class="stat-card card-temp">
+                        <div class="stat-label"><i class="fas fa-thermometer-half"></i> Temperature</div>
+                        <h3 class="stat-value" id="val-suhu">--°C</h3>
+                    </div>
+                    <div class="stat-card card-humid">
+                        <div class="stat-label"><i class="fas fa-wind"></i> Humidity</div>
+                        <h3 class="stat-value" id="val-kelembaban">--%</h3>
+                    </div>
+                    <div class="stat-card card-alt">
+                        <div class="stat-label"><i class="fas fa-mountain"></i> Altitude</div>
+                        <h3 class="stat-value" id="val-tekanan">--m</h3>
+                    </div>
+                    <div class="stat-card card-soil">
+                        <div class="stat-label"><i class="fas fa-water"></i> Soil Moisture</div>
+                        <h3 class="stat-value" id="val-kelembaban-tanah">--%</h3>
+                    </div>
+                </div>
+
+                <div class="dashboard-actions" style="margin-bottom: 24px; text-align: center;">
+                    <a class="btn-primary btn-lg pulse-effect btn-rekomendasi" href="#" style="display:inline-block; text-decoration:none; text-align:center;">
+                        🤖 Analisis Tanaman yang Cocok Sekarang
+                    </a>
+                </div>
+
+                <div class="grid-main">
+                    <div class="card">
+                        <h3>⏱️ Live Data (Terakhir)</h3>
+                        <div class="table-responsive">
+                            <table class="custom-table">
+                                <thead>
+                                <tr>
+                                    <th>Waktu</th>
+                                    <th>Temp</th>
+                                    <th>Humid</th>
+                                    <th>MDPL</th>
+                                    <th>Soil</th>
+                                    <th>Detail</th>
+                                </tr>
+                                </thead>
+                                <tbody id="live-data-table">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+</div>
+
+<script src="/script.js" defer></script>
+</body>
+</html>

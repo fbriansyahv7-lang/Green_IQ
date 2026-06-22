@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenIQ - Analisis</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div id="loadingOverlay">
+    <div class="loader"></div>
+</div>
+<div class="app-container">
+    <aside class="sidebar" id="sidebar">
+        <div class="brand-box">
+            <div class="brand-logo"><i class="fas fa-leaf"></i></div>
+            <div class="brand-text">
+                <h2>GreenIQ</h2>
+                <span style="font-size:11px; color:#6b7280;">Smart Farming AI</span>
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <a href="index.html" class="nav-link">
+                <i class="fas fa-chart-pie"></i> <span>Dashboard</span>
+            </a>
+            <a href="analisis.html" class="nav-link active">
+                <i class="fas fa-seedling"></i> <span>Rekomendasi</span>
+            </a>
+            <a href="riwayat.html" class="nav-link">
+                <i class="fas fa-clipboard-list"></i> <span>Riwayat</span>
+            </a>
+            <div style="margin:20px 0 10px 10px; font-size:11px; font-weight:700; color:#9ca3af;">SYSTEM</div>
+            <a href="#" class="nav-link">
+                <i class="fas fa-cog"></i> <span>Pengaturan</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display:flex; align-items:center; gap:15px;">
+                <button class="menu-toggle" onclick="toggleSidebar()" style="background:none; border:none; font-size:20px; display:none;">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div>
+                    <h1 id="header-title" style="margin:0; font-size:20px;">Rekomendasi</h1>
+                    <p style="margin:0; font-size:12px; color:#6b7280;">Analisis kecocokan tanaman berbasis AI</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-body">
+
+            <section id="view-recommendation" class="view-section active">
+                <div style="background:white; padding:15px; border-radius:12px; border:1px solid #e5e7eb; display:flex; gap:20px; flex-wrap:wrap; margin-bottom:20px;">
+                    <div style="display:flex; align-items:center; gap:8px; font-weight:600; font-size:14px;">
+                        <i class="fas fa-thermometer-half text-green"></i> <span id="r-temp">--</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; font-weight:600; font-size:14px;">
+                        <i class="fas fa-wind text-green"></i> <span id="r-humid">--</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; font-weight:600; font-size:14px;">
+                        <i class="fas fa-mountain text-green"></i> <span id="r-mdpl">--</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; font-weight:600; font-size:14px;">
+                        <i class="fas fa-tint text-green"></i> <span id="r-soil">--</span>
+                    </div>
+                </div>
+
+                <div class="filter-card">
+                    <div class="filter-grid">
+                        <div>
+                            <label style="display:block; margin-bottom:8px; font-weight:600; font-size:14px;">🌍 Zona Iklim</label>
+                            <select id="iklim" class="form-select">
+                                <option value="Tropis">Tropis</option>
+                                <option value="Subtropis">Subtropis</option>
+                                <option value="Subtropis">Kering</option>
+
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:8px; font-weight:600; font-size:14px;">Lokasi</label>
+                            <input id="lokasi" class="form-input">
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:8px; font-weight:600; font-size:14px;">🌱 Kategori</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-btn"><input type="checkbox" value="Sayuran" checked> <span>Sayuran</span></label>
+                                <label class="checkbox-btn"><input type="checkbox" value="Buah" checked> <span>Buah</span></label>
+                                <label class="checkbox-btn"><input type="checkbox" value="Pangan"> <span>Pangan</span></label>
+                                <label class="checkbox-btn"><input type="checkbox" value="Tanaman Hias"> <span>Tanaman Hias</span></label>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:8px; font-weight:600; font-size:14px;">Jumlah</label>
+                            <input id="jumlah" class="form-input" type="number" max ="6" min="1">
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn-primary btn-lg" id="btn-analyze">🤖 Analisa Rekomendasi AI</button>
+                    </div>
+                </div>
+                <div class="filter-card">
+                    <h3>Tambahkan Rekomendasi Tanaman</h3>
+                    <div class="filter-grid" id="Custom">
+
+                    </div>
+                </div>
+                
+
+                <div id="recommendation-results" style="display: none; margin-top: 30px;">
+                    <h3 style="margin-bottom:20px;">🏆 Top 3 Rekomendasi</h3>
+                    <div id="results-container"></div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+</div>
+
+<div class="modal-overlay" id="detailModal">
+    <div class="modal-content detail-modern">
+        <div class="modal-header-modern">
+            <div class="header-icon" id="m-icon">🥬</div>
+            <div class="header-info">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <h2 id="m-title">Nama Tanaman</h2>
+                    <div class="match-badge" id="m-score-badge">95% ⭐⭐⭐⭐⭐</div>
+                </div>
+                <div class="sub-info">
+                    <span id="m-category">Kategori: Sayuran</span> •
+                    <span id="m-climate">Iklim: Tropis</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-body">
+            <div class="detail-card card-green">
+                <h4>📊 KONDISI OPTIMAL</h4>
+                <div class="detail-grid-4">
+                    <div class="d-item"><span class="lbl">🌡️ Suhu</span><span class="val" id="opt-temp">--</span></div>
+                    <div class="d-item"><span class="lbl">💧 Tanah</span><span class="val" id="opt-soil">--</span></div>
+                    <div class="d-item"><span class="lbl">🌫️ Udara</span><span class="val" id="opt-humid">--</span></div>
+                    <div class="d-item"><span class="lbl">📍 MDPL</span><span class="val" id="opt-alt">--</span></div>
+                </div>
+            </div>
+
+            <div class="detail-card card-blue">
+                <h4>⏱️ WAKTU PERTUMBUHAN</h4>
+                <ul class="detail-list">
+                    <li><span>🌱 Waktu Panen:</span> <strong id="d-harvest">--</strong></li>
+                    <li><span>📈 Kesulitan:</span> <strong id="d-diff">--</strong></li>
+                    <li><span>🗓️ Musim:</span> <strong id="d-season">--</strong></li>
+                </ul>
+            </div>
+
+            <div class="detail-card card-gold">
+                <h4>💰 ESTIMASI EKONOMI</h4>
+                <ul class="detail-list">
+                    <li><span>💵 Harga Pasar:</span> <strong id="d-price">--</strong></li>
+                    <li><span>📊 Profit/1000m²:</span> <strong id="d-profit">--</strong></li>
+                    <li><span>🎯 ROI:</span> <strong id="d-roi" class="text-green">--</strong></li>
+                </ul>
+            </div>
+
+            <div class="detail-card card-orange">
+                <h4>🌱 PERAWATAN & TIPS</h4>
+                <p id="d-tips-text" style="font-size:13px; line-height:1.6; color:#555;">--</p>
+            </div>
+
+            <div class="detail-card card-dark">
+                <h4 style=" color:#fff;">🤖 KESIMPULAN AI</h4>
+                <p id="d-ai-reason" style="font-size:13px; font-style:italic; color:#fff;">--</p>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal()">← Kembali</button>
+            <button class="btn-primary" onclick="" id="simpan">💾 Simpan ke Riwayat</button>
+        </div>
+    </div>
+</div>
+
+<script src="/script.js" defer></script>
+</body>
+</html>

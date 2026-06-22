@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenIQ - Peta Tanah</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="/style.css">
+
+    <style>
+        #map {
+            height: 480px;
+            width: 100%;
+            border-radius: 12px;
+            z-index: 0;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #374151;
+            font-weight: 500;
+        }
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: inline-block;
+            border: 2px solid rgba(0,0,0,0.2);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 28px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .modal-box h3 {
+            margin: 0 0 20px;
+            font-size: 17px;
+            color: #111827;
+        }
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            box-sizing: border-box;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: #16a34a;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .modal-footer-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn-cancel {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #fff;
+            color: #374151;
+            font-size: 14px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .btn-cancel:hover { background: #f3f4f6; }
+
+        .btn-simpan {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #16a34a;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .btn-simpan:hover { background: #15803d; }
+
+        .marker-list {
+            margin-top: 24px;
+        }
+        .marker-list h3 {
+            font-size: 15px;
+            margin-bottom: 12px;
+            color: #111827;
+        }
+        .marker-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            background: #fff;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+        .marker-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .marker-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .marker-color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .marker-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #111827;
+        }
+        .marker-coords {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+        .marker-soil {
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .btn-hapus {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .btn-hapus:hover { background: #fef2f2; }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+            font-size: 14px;
+        }
+        .empty-state i {
+            font-size: 40px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .stats-mini {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-mini-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+        }
+        .stat-mini-card .val {
+            font-size: 22px;
+            font-weight: 800;
+            color: #111827;
+        }
+        .stat-mini-card .lbl {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+        .stat-mini-card.green .val { color: #16a34a; }
+        .stat-mini-card.yellow .val { color: #d97706; }
+        .stat-mini-card.red .val { color: #dc2626; }
+
+        .pick-hint {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <aside class="sidebar" id="sidebar">
+        <div class="brand-box">
+            <div class="brand-logo"><i class="fas fa-leaf"></i></div>
+            <div class="brand-text">
+                <h2>GreenIQ</h2>
+                <span style="font-size:11px; color:#6b7280;">Smart Farming AI</span>
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <a href="index.html" class="nav-link">
+                <i class="fas fa-chart-pie"></i> <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-link btn-rekomendasi">
+                <i class="fas fa-seedling"></i> <span>Rekomendasi</span>
+            </a>
+            <a href="riwayat.html" class="nav-link">
+                <i class="fas fa-clipboard-list"></i> <span>Riwayat</span>
+            </a>
+            <a href="peta_kelembaban.html" class="nav-link active">
+                <i class="fas fa-map-marked-alt"></i> <span>Peta Tanah</span>
+            </a>
+            <div style="margin:20px 0 10px 10px; font-size:11px; font-weight:700; color:#9ca3af;">SYSTEM</div>
+            <a href="#" class="nav-link">
+                <i class="fas fa-cog"></i> <span>Pengaturan</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div style="display:flex; align-items:center; gap:15px;">
+                <button class="menu-toggle" onclick="toggleSidebar()" style="background:none; border:none; font-size:20px; display:none;">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div>
+                    <h1 style="margin:0; font-size:20px;">Peta Tanah</h1>
+                    <p style="margin:0; font-size:12px; color:#6b7280;">Visualisasi kondisi tanah per lokasi</p>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="bukaModal()" style="display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-plus"></i> Tambah Titik
+            </button>
+        </header>
+
+        <div class="content-body">
+
+            <!-- Ringkasan -->
+            <div class="stats-mini">
+                <div class="stat-mini-card green">
+                    <div class="val" id="count-subur">0</div>
+                    <div class="lbl">🟢 Tanah Subur</div>
+                </div>
+                <div class="stat-mini-card yellow">
+                    <div class="val" id="count-sedang">0</div>
+                    <div class="lbl">🟡 Cukup Subur</div>
+                </div>
+                <div class="stat-mini-card red">
+                    <div class="val" id="count-kering">0</div>
+                    <div class="lbl">🔴 Tanah Kering</div>
+                </div>
+            </div>
+
+            <!-- Peta -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                    <h3 style="margin:0;">🗺️ Peta Kondisi Tanah</h3>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background:#16a34a;"></span> Subur (≥60%)
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background:#d97706;"></span> Cukup (30–59%)
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background:#dc2626;"></span> Kering (&lt;30%)
+                        </div>
+                    </div>
+                </div>
+                <div id="map"></div>
+                <p class="pick-hint"><i class="fas fa-info-circle"></i> Klik pada peta untuk memilih koordinat otomatis saat menambah titik baru.</p>
+            </div>
+
+            <!-- Daftar Marker -->
+            <div class="card marker-list">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                    <h3 style="margin:0;">📍 Daftar Titik Pengukuran</h3>
+                    <span id="jumlah-titik" style="font-size:12px; color:#6b7280;">0 titik</span>
+                </div>
+                <div id="marker-list-container">
+                    <div class="empty-state">
+                        <i class="fas fa-map-pin"></i>
+                        Belum ada titik pengukuran.<br>Klik <strong>Tambah Titik</strong> untuk mulai.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- Modal Tambah Titik -->
+<div class="modal-overlay" id="modalTambah">
+    <div class="modal-box">
+        <h3>📍 Tambah Titik Pengukuran</h3>
+
+        <div class="form-group">
+            <label>Nama Lokasi</label>
+            <input type="text" id="inp-nama" placeholder="Contoh: Sawah Blok A" />
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Latitude</label>
+                <input type="number" id="inp-lat" placeholder="-0.5023" step="any" />
+            </div>
+            <div class="form-group">
+                <label>Longitude</label>
+                <input type="number" id="inp-lng" placeholder="117.1535" step="any" />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Kelembaban Tanah (%)</label>
+            <input type="number" id="inp-soil" placeholder="0 - 100" min="0" max="100" />
+            <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
+                <button onclick="pakaiDataSensor()" style="font-size:12px; padding:5px 10px; border:1px solid #16a34a; background:#f0fdf4; color:#16a34a; border-radius:6px; cursor:pointer;">
+                    🌱 Pakai Data Sensor Terakhir
+                </button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Catatan (opsional)</label>
+            <input type="text" id="inp-catatan" placeholder="Contoh: Dekat sungai, tanah lempung" />
+        </div>
+
+        <div class="modal-footer-btns">
+            <button class="btn-cancel" onclick="tutupModal()">Batal</button>
+            <button class="btn-simpan" onclick="simpanTitik()">Simpan Titik</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/script.js" defer></script>
+<script>
+    // =============================================
+    //   PETA TANAH - GreenIQ
+    // =============================================
+
+    const STORAGE_KEY = "greeniq_peta_titik";
+
+    // Init peta (default center: Samarinda)
+    const map = L.map("map").setView([-0.5023, 117.1535], 12);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+        maxZoom: 19
+    }).addTo(map);
+
+    // Klik peta → isi koordinat di modal
+    map.on("click", function(e) {
+        document.getElementById("inp-lat").value = e.latlng.lat.toFixed(6);
+        document.getElementById("inp-lng").value = e.latlng.lng.toFixed(6);
+        bukaModal();
+    });
+
+    // =============================================
+    //   DATA & STATE
+    // =============================================
+    let titikList = [];
+    let markerMap = {}; // id → leaflet marker
+
+    function loadDariStorage() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            titikList = raw ? JSON.parse(raw) : [];
+        } catch { titikList = []; }
+    }
+
+    function simpanKeStorage() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(titikList));
+    }
+
+    // =============================================
+    //   WARNA BERDASARKAN KONDISI TANAH
+    // =============================================
+    function getWarna(soil) {
+        if (soil >= 60) return "#16a34a";   // hijau - subur
+        if (soil >= 30) return "#d97706";   // kuning - cukup
+        return "#dc2626";                    // merah - kering
+    }
+
+    function getLabel(soil) {
+        if (soil >= 60) return "Subur";
+        if (soil >= 30) return "Cukup";
+        return "Kering";
+    }
+
+    function getEmoji(soil) {
+        if (soil >= 60) return "🟢";
+        if (soil >= 30) return "🟡";
+        return "🔴";
+    }
+
+    function buatIcon(soil) {
+        const warna = getWarna(soil);
+        const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">
+                <path d="M16 0C7.2 0 0 7.2 0 16c0 11 16 26 16 26S32 27 32 16C32 7.2 24.8 0 16 0z" fill="${warna}" stroke="white" stroke-width="2"/>
+                <circle cx="16" cy="16" r="7" fill="white" opacity="0.9"/>
+                <text x="16" y="20" text-anchor="middle" font-size="10" font-weight="bold" fill="${warna}">${soil}%</text>
+            </svg>`;
+        return L.divIcon({
+            html: svg,
+            className: "",
+            iconSize: [32, 42],
+            iconAnchor: [16, 42],
+            popupAnchor: [0, -42]
+        });
+    }
+
+    // =============================================
+    //   RENDER SEMUA MARKER & LIST
+    // =============================================
+    function renderSemua() {
+        // Hapus semua marker lama
+        Object.values(markerMap).forEach(m => map.removeLayer(m));
+        markerMap = {};
+
+        // Render marker baru
+        titikList.forEach(titik => {
+            const marker = L.marker([titik.lat, titik.lng], { icon: buatIcon(titik.soil) })
+                .addTo(map)
+                .bindPopup(buatPopup(titik));
+            markerMap[titik.id] = marker;
+        });
+
+        renderList();
+        updateStats();
+    }
+
+    function buatPopup(titik) {
+        const warna = getWarna(titik.soil);
+        const label = getLabel(titik.soil);
+        return `
+            <div style="font-family:Inter,sans-serif; min-width:180px;">
+                <div style="font-weight:700; font-size:14px; margin-bottom:8px; color:#111827;">${titik.nama}</div>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span style="background:${warna}; color:#fff; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600;">${label}</span>
+                    <span style="font-size:16px; font-weight:800; color:${warna};">${titik.soil}%</span>
+                </div>
+                <div style="font-size:12px; color:#6b7280; line-height:1.6;">
+                    📍 ${titik.lat.toFixed(5)}, ${titik.lng.toFixed(5)}<br>
+                    🌡️ Suhu: ${titik.suhu ?? "-"} °C<br>
+                    💧 Kelembaban: ${titik.kelembaban ?? "-"} %<br>
+                    📅 ${new Date(titik.waktu).toLocaleString("id-ID")}
+                    ${titik.catatan ? `<br>📝 ${titik.catatan}` : ""}
+                </div>
+                <button onclick="hapusTitik('${titik.id}')" style="margin-top:10px; width:100%; padding:6px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; border-radius:6px; cursor:pointer; font-size:12px;">
+                    🗑️ Hapus Titik
+                </button>
+            </div>
+        `;
+    }
+
+    function renderList() {
+        const container = document.getElementById("marker-list-container");
+        const jumlahEl = document.getElementById("jumlah-titik");
+        jumlahEl.textContent = `${titikList.length} titik`;
+
+        if (titikList.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-map-pin"></i>
+                    Belum ada titik pengukuran.<br>Klik <strong>Tambah Titik</strong> untuk mulai.
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = "";
+        [...titikList].reverse().forEach(titik => {
+            const warna = getWarna(titik.soil);
+            const label = getLabel(titik.soil);
+            const div = document.createElement("div");
+            div.className = "marker-item";
+            div.innerHTML = `
+                <div class="marker-left" onclick="fokusMarker('${titik.id}')">
+                    <div class="marker-color-dot" style="background:${warna};"></div>
+                    <div>
+                        <div class="marker-name">${titik.nama}</div>
+                        <div class="marker-coords">${titik.lat.toFixed(5)}, ${titik.lng.toFixed(5)}</div>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="marker-soil" style="color:${warna};">${getEmoji(titik.soil)} ${titik.soil}% <small style="font-weight:400; color:#6b7280;">${label}</small></span>
+                    <button class="btn-hapus" onclick="hapusTitik('${titik.id}')"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function updateStats() {
+        let subur = 0, sedang = 0, kering = 0;
+        titikList.forEach(t => {
+            if (t.soil >= 60) subur++;
+            else if (t.soil >= 30) sedang++;
+            else kering++;
+        });
+        document.getElementById("count-subur").textContent = subur;
+        document.getElementById("count-sedang").textContent = sedang;
+        document.getElementById("count-kering").textContent = kering;
+    }
+
+    // =============================================
+    //   FOKUS KE MARKER
+    // =============================================
+    function fokusMarker(id) {
+        const titik = titikList.find(t => t.id === id);
+        if (!titik) return;
+        map.flyTo([titik.lat, titik.lng], 16, { duration: 1 });
+        setTimeout(() => {
+            if (markerMap[id]) markerMap[id].openPopup();
+        }, 1100);
+    }
+
+    // =============================================
+    //   HAPUS TITIK
+    // =============================================
+    function hapusTitik(id) {
+        if (!confirm("Hapus titik ini?")) return;
+        titikList = titikList.filter(t => t.id !== id);
+        simpanKeStorage();
+        renderSemua();
+    }
+
+    // =============================================
+    //   MODAL
+    // =============================================
+    function bukaModal() {
+        document.getElementById("modalTambah").classList.add("active");
+    }
+
+    function tutupModal() {
+        document.getElementById("modalTambah").classList.remove("active");
+        document.getElementById("inp-nama").value = "";
+        document.getElementById("inp-lat").value = "";
+        document.getElementById("inp-lng").value = "";
+        document.getElementById("inp-soil").value = "";
+        document.getElementById("inp-catatan").value = "";
+    }
+
+    // Ambil data sensor terakhir dari API
+    async function pakaiDataSensor() {
+        try {
+            const res = await fetch("/api/latest-sensor");
+            if (!res.ok) { alert("Belum ada data sensor."); return; }
+            const data = await res.json();
+            document.getElementById("inp-soil").value = data.kelembaban_tanah ?? data.kesuburan_tanah ?? 0;
+
+            // Isi suhu & kelembaban tersembunyi buat popup
+            window._sensorCache = { suhu: data.suhu, kelembaban: data.kelembaban };
+            alert(`Data sensor dimuat!\nSuhu: ${data.suhu}°C | Kelembaban: ${data.kelembaban}% | Tanah: ${data.kelembaban_tanah ?? data.kesuburan_tanah}%`);
+        } catch (err) {
+            alert("Gagal mengambil data sensor.");
+        }
+    }
+
+    function simpanTitik() {
+        const nama   = document.getElementById("inp-nama").value.trim();
+        const lat    = parseFloat(document.getElementById("inp-lat").value);
+        const lng    = parseFloat(document.getElementById("inp-lng").value);
+        const soil   = parseInt(document.getElementById("inp-soil").value);
+        const catatan = document.getElementById("inp-catatan").value.trim();
+
+        if (!nama) { alert("Nama lokasi wajib diisi."); return; }
+        if (isNaN(lat) || isNaN(lng)) { alert("Koordinat tidak valid."); return; }
+        if (isNaN(soil) || soil < 0 || soil > 100) { alert("Kelembaban tanah harus 0–100."); return; }
+
+        const cache = window._sensorCache || {};
+        const titik = {
+            id: Date.now().toString(),
+            nama,
+            lat,
+            lng,
+            soil,
+            catatan,
+            suhu: cache.suhu ?? null,
+            kelembaban: cache.kelembaban ?? null,
+            waktu: new Date().toISOString()
+        };
+
+        titikList.push(titik);
+        simpanKeStorage();
+        renderSemua();
+        tutupModal();
+        window._sensorCache = null;
+
+        // Fokus ke marker baru
+        setTimeout(() => fokusMarker(titik.id), 300);
+    }
+
+    // Tutup modal jika klik di luar
+    document.getElementById("modalTambah").addEventListener("click", function(e) {
+        if (e.target === this) tutupModal();
+    });
+
+    // =============================================
+    //   INIT
+    // =============================================
+    loadDariStorage();
+    renderSemua();
+
+    // Sesuaikan peta ke semua marker jika ada
+    if (titikList.length > 0) {
+        const bounds = L.latLngBounds(titikList.map(t => [t.lat, t.lng]));
+        map.fitBounds(bounds, { padding: [40, 40] });
+    }
+</script>
+</body>
+</html>
