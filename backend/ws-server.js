@@ -1,12 +1,15 @@
 import { WebSocketServer } from "ws";
 
-// Dashboard connect ke port 8080
-export const wss = new WebSocketServer({ port: 8080 });
+export let wss;
 
-wss.on("listening", () => {
-  console.log("WebSocket server listening on ws://0.0.0.0:8080");
-});
+export function initWS(server) {
+  wss = new WebSocketServer({ server });
 
-wss.on("error", (err) => {
-  console.error("WebSocket server error:", err);
-});
+  wss.on("listening", () => {
+    console.log("WebSocket server listening (shared port)");
+  });
+
+  wss.on("error", (err) => {
+    console.error("WebSocket server error:", err);
+  });
+}
