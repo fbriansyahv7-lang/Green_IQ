@@ -1,12 +1,9 @@
 {
-  "name": "greeniq-backend",
+  "name": "greeniq-root",
   "version": "1.0.0",
-  "description": "GreenIQ IoT Backend — MQTT + MySQL + AI crop recommendations",
-  "type": "module",
-  "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "node --watch app.js"
+    "start": "node backend/app.js",
+    "install": "cd backend && npm install"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",
