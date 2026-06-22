@@ -22,7 +22,6 @@ async function safeFetch(url, options = {}) {
   try {
     const res = await fetch(url, options);
     const text = await res.text();
-    // try parse JSON, otherwise return text
     try {
       return { ok: res.ok, status: res.status, data: JSON.parse(text) };
     } catch {
@@ -49,9 +48,8 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("goRekomendasi DIPANGGIL");
 
       try {
-        const res = await fetch("/api/latest-sensor");
+        const res = await fetch(`${API_BASE}/api/latest-sensor`);
 
-        // FIX: handle 404 gracefully
         if (res.status === 404) {
           alert("Belum ada data sensor. Pastikan perangkat sudah mengirim data.");
           return;
@@ -83,9 +81,8 @@ window.goRekomendasi = async function () {
   console.log("goRekomendasi DIPANGGIL");
 
   try {
-    const res = await fetch("/api/latest-sensor");
+    const res = await fetch(`${API_BASE}/api/latest-sensor`);
 
-    // FIX: handle 404 gracefully
     if (res.status === 404) {
       alert("Belum ada data sensor. Pastikan perangkat sudah mengirim data.");
       return;
@@ -112,7 +109,7 @@ window.goRekomendasi = async function () {
 
 const API_BASE = window.location.origin;
 const WS_PROTOCOL = window.location.protocol === "https:" ? "wss:" : "ws:";
-const WS_URL = `${WS_PROTOCOL}//${window.location.hostname}`;
+const WS_URL = `${WS_PROTOCOL}//${window.location.host}`;
 
 async function muatData() {
   const elTemp = document.getElementById("val-suhu");
@@ -120,13 +117,11 @@ async function muatData() {
   const elPres = document.getElementById("val-tekanan");
   const elSoil = document.getElementById("val-kelembaban-tanah");
 
-  // skip if page doesn't have those elements
   if (!elTemp && !elHum && !elPres && !elSoil) return;
 
   const resp = await safeFetch(`${API_BASE}/api/latest-sensor`);
   if (!resp.ok) {
     if (resp.status === 404) {
-      // FIX: silent return, no console.error spam — sensor belum ada data
       if (elTemp) elTemp.innerText = "--";
       if (elHum) elHum.innerText = "--";
       if (elPres) elPres.innerText = "--";
@@ -147,7 +142,7 @@ async function muatData() {
   if (elSoil) elSoil.innerText = ((data.kelembaban_tanah ?? data.kesuburan_tanah) ?? "--") + " %";
 }
 
-// FIX: WebSocket hanya diinisialisasi di halaman dashboard (ada live-data-table)
+// WebSocket hanya diinisialisasi di halaman dashboard (ada live-data-table)
 let ws = null;
 if (document.getElementById("live-data-table")) {
   ws = new WebSocket(WS_URL);
@@ -157,7 +152,7 @@ if (document.getElementById("live-data-table")) {
   };
 
   ws.onerror = (err) => {
-    console.warn("WebSocket error — pastikan server WS berjalan di port 8080:", err);
+    console.warn("WebSocket error:", err);
   };
 
   ws.onclose = () => {
@@ -181,7 +176,6 @@ if (document.getElementById("live-data-table")) {
       if (elPres) elPres.innerText = (formatted ?? "--") + " m";
       if (elSoil) elSoil.innerText = ((data.kelembaban_tanah ?? data.kesuburan_tanah) ?? "--") + " %";
 
-      // reload tabel jika ada
       loadSensorList();
     } catch (err) {
       console.error("WebSocket message parse error:", err);
@@ -235,7 +229,6 @@ async function loadSensorDetail() {
 
   let ketinggian = pressureToAltitude(data.tekanan);
   let formatted = ketinggian.toFixed(2);
-  // header data
   const rTemp = document.getElementById("r-temp");
   const rHum = document.getElementById("r-humid");
   const rMdpl = document.getElementById("r-mdpl");
@@ -251,7 +244,6 @@ async function loadSensorDetail() {
 
   const btnAnalisis = document.getElementById("btn-analyze");
   
-  // FIX: gunakan onclick agar tidak menumpuk
   btnAnalisis.onclick = () => analisisAI(data.id_sensor_data);
 
   const iklimInput = document.getElementById("iklim");
@@ -260,14 +252,14 @@ async function loadSensorDetail() {
   if (data.analisis === 1) {
     if (iklimInput) {
       iklimInput.value = data.iklim || "Tropis";
-      iklimInput.disabled = true;  // kunci
+      iklimInput.disabled = true;
       iklimInput.style.backgroundColor = "#eee";
       iklimInput.style.cursor = "not-allowed";
     }
 
     if (lokasiInput) {
       lokasiInput.value = data.lokasi || "-";
-      lokasiInput.disabled = true; // kunci
+      lokasiInput.disabled = true;
       lokasiInput.style.backgroundColor = "#eee";
       lokasiInput.style.cursor = "not-allowed";
     }
@@ -277,8 +269,6 @@ async function loadSensorDetail() {
     `;
 
     const btnCustom = document.getElementById("btn-add-custom");
-
-    // juga gunakan onclick untuk custom
     btnCustom.onclick = () => tambahCustom();
   }
 }
@@ -291,7 +281,6 @@ async function analisisAI(id) {
   try {
     showLoading();
 
-    // get fields (IDs from the new UI)
     const iklimEl = document.getElementById("in-climate") || document.getElementById("iklim");
     const lokasiEl = document.getElementById("lokasi");
     const jumlahEl = document.getElementById("jumlah");
@@ -299,8 +288,6 @@ async function analisisAI(id) {
     const lokasiValue = lokasiEl ? lokasiEl.value : "-";
     const jumlahValue = jumlahEl ? jumlahEl.value : "1";
 
-
-    // categories: checkbox group, optional — if your endpoint accepts array
     const kategoriEls = [...document.querySelectorAll('.checkbox-group input:checked')];
     const kategoriList = kategoriEls.map(cb => cb.value);
 
@@ -308,8 +295,6 @@ async function analisisAI(id) {
     if (kategoriList.length === 0) { hideLoading(); return alert("Pilih minimal satu kategori."); }
     if (jumlahValue < 1 || jumlahValue > 6) { hideLoading(); return alert("Jumlah tidak boleh kurang dari 1 atau lebih dari 6"); }
 
-
-    // disable analyze button to prevent double-click
     const btn = document.getElementById("btn-analyze");
     if (btn) btn.disabled = true;
 
@@ -327,7 +312,6 @@ async function analisisAI(id) {
     }
     console.log("RUN analisisAI");
     alert("Analisis selesai! Rekomendasi AI tersimpan.");
-    // refresh UI: list rekomendasi + detail header
     await listRekomendasi();
     await loadSensorDetail();
   } catch (err) {
@@ -352,7 +336,6 @@ async function tambahCustom() {
     const nama = namaEl.value.trim();
     if (!nama) { hideLoading(); return alert("Nama tanaman tidak boleh kosong."); }
 
-    // disable button while processing
     const btn = document.getElementById("btn-add-custom");
     if (btn) btn.disabled = true;
 
@@ -374,7 +357,6 @@ async function tambahCustom() {
     alert(resp.data?.message || "Berhasil!");
     await listRekomendasi();
 
-
   } catch (err) {
     console.error(err);
     alert("Terjadi error saat menambah custom.");
@@ -387,7 +369,6 @@ async function tambahCustom() {
 
 /* ===============================
    LIST REKOMENDASI (GET /api/list-rekomendasi/:id)
-   -> renderResults untuk UI baru (analisis.html)
 ================================ */
 async function listRekomendasi() {
   const id = new URLSearchParams(window.location.search).get("id");
@@ -420,7 +401,6 @@ function renderResults(results) {
   wrapper.style.display = results.length ? "block" : "none";
 
   results.forEach((r, idx) => {
-    // Untuk item > 3, medal tidak perlu
     const medal = idx < 3 ? ["🥇","🥈","🥉"][idx] : "🌱";
     const color = idx < 3 ? ["gold","silver","bronze"][idx] : "normal";
 
@@ -445,8 +425,6 @@ function renderResults(results) {
 
 /* ===============================
    DETAIL REKOMENDASI PAGE
-   (ai-rekomendasi-detail.html)
-   expects endpoint /api/rekomendasi-detail/:id returning single object
 ================================ */
 async function loadRekomendasiDetail() {
   const id = new URLSearchParams(window.location.search).get("id");
@@ -457,7 +435,6 @@ async function loadRekomendasiDetail() {
     console.error("Gagal ambil rekom detail:", resp);
     return;
   }
-  // backend should return single object (rows[0])
   const data = Array.isArray(resp.data) && resp.data.length ? resp.data[0] : resp.data;
 
   if (!data) {
@@ -493,11 +470,10 @@ async function loadRekomendasiDetail() {
    NAV & UTILS
 ================================ */
 function lihatDetail(id) { window.location.href = "analisis.html?id=" + id; }
-//function showDetail(id) { window.location.href = "ai-rekomendasi-detail.html?id=" + id; }
-function showDetail(id) {
-  createDetailModal(); // pastikan modal ada
 
-  // fetch data
+function showDetail(id) {
+  createDetailModal();
+
   safeFetch(`${API_BASE}/api/rekomendasi-detail/${id}`).then(resp => {
     const data = resp.ok ? resp.data : null;
 
@@ -512,17 +488,14 @@ function showDetail(id) {
     document.getElementById('opt-humid').innerText = data ? `: ${data.kelembaban_optimal ?? "-"} %` : "-";
     document.getElementById('opt-alt').innerText = data ? `: ${data.ketinggian_optimal ?? "-"} m` : "-";
 
-    // Card 2: Pertumbuhan
     document.getElementById('d-harvest').innerText = data ? `${data.waktu_panen ?? "-"}` : "-";
     document.getElementById('d-diff').innerText = data ? `${data.tingkat_kesulitan ?? "-"}` : "-";
     document.getElementById('d-season').innerText = data ? `${data.musim_tanam ?? "-"}` : "-";
 
-    // Card 3: Ekonomi
     document.getElementById('d-price').innerText = data ? `${data.harga_pasar ?? "-"}` : "-";
     document.getElementById('d-profit').innerText = data ? `${data.profit_1000m2 ?? "-"}` : "-";
     document.getElementById('d-roi').innerText = data ? `${data.ROI ?? "-"}` : "-";
 
-    // Card 4 & 5: Tips & AI
     document.getElementById('d-tips-text').innerText = data ? `${data.tips_budidaya ?? "-"}` : "-";
     document.getElementById('d-ai-reason').innerText = data ? `${data.kesimpulan ?? "-"}` : "-";
 
@@ -532,7 +505,6 @@ function showDetail(id) {
     }
     document.getElementById('simpan').onclick = () => simpanTanaman(id);
 
-
     document.getElementById('detailModal').style.display = 'flex';
   }).catch(err => console.error(err));
 }
@@ -541,13 +513,12 @@ function closeModal() {
   const modal = document.getElementById('detailModal');
   if (modal) modal.style.display = 'none';
 }
-function createDetailModal() {
-  // if (document.getElementById("detailModal")) return; // sudah ada
 
+function createDetailModal() {
   const modal = document.createElement("div");
   modal.id = "detailModal";
   modal.className = "modal-overlay";
-  modal.style.display = "none"; // awalnya hidden
+  modal.style.display = "none";
   modal.innerHTML = `
     <div class="modal-content detail-modern">
       <div class="modal-header-modern">
@@ -622,19 +593,15 @@ function simpanTanaman(id) {
     .then(res => res.json())
     .then(result => {
         if (result.success) {
-          if(result.simpan === 1)
-          {
+          if(result.simpan === 1) {
             alert("Berhasil disimpan ke riwayat!");
             closeModal();
             window.location.href = `riwayat.html?`;
             loadRiwayat();
-          }
-          else
-          {
+          } else {
             alert("Berhasil dihapus dari riwayat!");
             closeModal();
             loadRiwayat();
-
           }
         } else {
             alert("Gagal menyimpan");
@@ -661,12 +628,10 @@ function renderSavedHistory(groups) {
     groups.forEach(group => {
         let html = `
         <div class="history-group">
-
             <div class="history-group-header">📊 Sensor Data #${group.id_sensor_data}</div>
             <div class="history-group-timestamp">
                 ${new Date(group.reading_timestamp).toLocaleString()}
             </div>
-
             <div class="sensor-row">
                 <span>🌡️ ${group.suhu}°C</span>
                 <span>💧 ${group.kelembaban}%</span>
@@ -674,7 +639,6 @@ function renderSavedHistory(groups) {
                 <span>🌍 ${group.iklim}</span>
                 <span>📍 ${group.lokasi ?? "-"}</span>
             </div>
-
             <div style="margin-top: 12px; font-weight:600; font-size:13px; color:#374151;">
                 Rekomendasi Tersimpan:
             </div>
@@ -690,7 +654,6 @@ function renderSavedHistory(groups) {
                         <span style="font-size:11px; color:#6b7280;">ID: ${item.id_tanaman}</span>
                     </div>
                 </div>
-
                 <span class="match-badge">${item.skor ?? "?"}% Match</span>
             </div>`;
         });
@@ -700,14 +663,12 @@ function renderSavedHistory(groups) {
     });
 }
 
-
 function loadRiwayat() {
   console.log("loadRiwayat DIPANGGIL");
-  fetch("/api/riwayat")
+  fetch(`${API_BASE}/api/riwayat`)
     .then(res => res.json())
     .then(res => {
       console.log("Riwayat:", res);
-
       if (res.success) {
         renderSavedHistory(res.data);
       }
@@ -715,14 +676,12 @@ function loadRiwayat() {
     .catch(err => console.error("Gagal load riwayat:", err));
 }
 
-
 document.querySelectorAll(".nav-link").forEach(link => {
     link.addEventListener("click", function(e) {
         const current = window.location.pathname.split("/").pop();
         const target = this.getAttribute("href");
-
         if (current === target) {
-            e.preventDefault();  // mencegah reload
+            e.preventDefault();
             console.log("Sudah di halaman ini");
         }
     });
@@ -739,8 +698,6 @@ function clearSavedHistory() {
     .then(res => {
         if (res.success) {
             alert("Semua riwayat telah dihapus!");
-
-            // Jika halaman punya komponen riwayat, refresh tampilan
             if (document.getElementById("saved-history-container")) {
                 loadRiwayat();
             }
@@ -750,33 +707,26 @@ function clearSavedHistory() {
 }
 
 function pressureToAltitude(pressureHpa, seaLevelPressure = 1013.25) {
-    // Tekanan dalam hPa, default tekanan permukaan laut 1013.25 hPa
     return 44330 * (1 - Math.pow(pressureHpa / seaLevelPressure, 0.1903));
 }
 
 /* ===============================
-   AUTO INIT (runs on every page)
-   decides which functions to call
+   AUTO INIT
 ================================ */
 (function init() {
-  // hide loading overlay initially
   hideLoading();
 
-  // call dashboard functions if elements exist
   if (document.getElementById("live-data-table")) {
     muatData();
     loadSensorList();
-    // refresh periodically
     setInterval(muatData, 5000);
   }
 
-  // analysis page (has #recommendation-results wrapper or #analisisOrCustom)
   if (document.getElementById("recommendation-results") || document.getElementById("analisisOrCustom")) {
     loadSensorDetail();
     listRekomendasi();
   }
 
-  // rekom detail page (has #detail-box)
   if (document.getElementById("detail-box")) {
     loadRekomendasiDetail();
   }
