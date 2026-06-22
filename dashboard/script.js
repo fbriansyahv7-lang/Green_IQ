@@ -112,7 +112,7 @@ window.goRekomendasi = async function () {
 
 const API_BASE = window.location.origin;
 const WS_PROTOCOL = window.location.protocol === "https:" ? "wss:" : "ws:";
-const WS_URL = `${WS_PROTOCOL}//${window.location.hostname}:8080`;
+const WS_URL = `${WS_PROTOCOL}//${window.location.hostname}`;
 
 async function muatData() {
   const elTemp = document.getElementById("val-suhu");
